@@ -15,6 +15,7 @@
 
 #include "vl53l1_types.h"
 #include "i2c.h"
+#include "driver/i2c_master.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -55,6 +56,11 @@ extern "C"
 	extern vl53l1x_read_byte g_vl53l1x_read_byte_ptr;
 	extern vl53l1x_read_word g_vl53l1x_read_word_ptr;
 	extern vl53l1x_read_dword g_vl53l1x_read_dword_ptr;
+
+	/* ---- Platform device management (dùng I2C master driver) ---- */
+	void vl53l1_platform_set_bus(i2c_master_bus_handle_t bus);
+	uint16_t vl53l1_platform_add_device(uint8_t i2c_addr);
+	uint16_t vl53l1_platform_change_address(uint8_t old_addr, uint8_t new_addr);
 
 #ifdef __cplusplus
 }

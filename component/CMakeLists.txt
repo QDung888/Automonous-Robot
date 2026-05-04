@@ -6,11 +6,10 @@ idf_component_register(
         "src/spi.c"
         "src/joystick.c"
         "src/serial_ros.c"
-        # --- TẠM ẨN: VL53L1X ---
-        # "src/vl53l1x.c"
-        # "src/VL53L1X_api.c"
-        # "src/VL53L1X_calibration.c"
-        # "src/vl53l1_platform.c"
+        "src/vl53l1x.c"
+        "src/VL53L1X_api.c"
+        "src/VL53L1X_calibration.c"
+        "src/vl53l1_platform.c"
         # --- TẠM ẨN: BNO08x ---
         # "src/esp32_bno08x.c"
         # "src/BNO08x.cpp"

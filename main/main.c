@@ -8,6 +8,7 @@
 #include "TB6612FNG.h"
 #include "joystick.h"
 #include "serial_ros.h"
+#include "vl53l1x.h"
 
 static const char *TAG = "MAIN";
 
@@ -24,7 +25,7 @@ static void on_pi_command(uint8_t direction, uint8_t speed)
 
 void app_main(void)
 {
-    ESP_LOGI(TAG, "===== Robot Car – PS2 + SerialROS =====");
+    ESP_LOGI(TAG, "===== Robot Car – PS2 + SerialROS + VL53L1X =====");
 
     /* ---------- 1. Khởi tạo I2C bus ---------- */
     i2c_master_bus_handle_t bus_handle = NULL;
@@ -49,17 +50,26 @@ void app_main(void)
     /* Bật PWM – tốc độ 70/255 */
     tb6612_set_speed_all(70);
 
-    /* ---------- 4. Khởi tạo SerialROS (UART0 → CP2102 → Pi) ---------- */
+    /* ---------- 4. Khởi tạo 2x VL53L1X ---------- */
+    esp_err_t vl_err = vl53l1x_dual_init(bus_handle);
+    if (vl_err == ESP_OK) {
+        vl53l1x_start_print_task();
+        ESP_LOGI(TAG, "VL53L1X: 2 sensor sẵn sàng");
+    } else {
+        ESP_LOGW(TAG, "VL53L1X: init thất bại – bỏ qua cảm biến khoảng cách");
+    }
+
+    /* ---------- 5. Khởi tạo SerialROS (UART0 → CP2102 → Pi) ---------- */
     ESP_ERROR_CHECK(serial_ros_init());
     serial_ros_start(&motor_sys, on_pi_command);
 
-    /* ---------- 5. Khởi tạo tay cầm PS2 ---------- */
+    /* ---------- 6. Khởi tạo tay cầm PS2 ---------- */
     joystick_init();
 
-    /* ---------- 6. Bắt đầu task điều khiển xe bằng PS2 ---------- */
+    /* ---------- 7. Bắt đầu task điều khiển xe bằng PS2 ---------- */
     joystick_start_control_task(&motor_sys);
 
-    ESP_LOGI(TAG, "Sẵn sàng – PS2 + SerialROS encoder data → Pi");
+    ESP_LOGI(TAG, "Sẵn sàng – PS2 + Encoder + VL53L1X + SerialROS");
 
     /* Main task không cần làm gì thêm */
     while (1) {
