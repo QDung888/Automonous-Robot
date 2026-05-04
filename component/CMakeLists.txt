@@ -5,6 +5,7 @@ idf_component_register(
         "src/TB6612FNG.c"
         "src/spi.c"
         "src/joystick.c"
+        "src/serial_ros.c"
         # --- TẠM ẨN: VL53L1X ---
         # "src/vl53l1x.c"
         # "src/VL53L1X_api.c"
@@ -52,6 +53,7 @@ idf_component_register(
         esp_driver_spi
         esp_driver_ledc
         esp_driver_pcnt
+        esp_driver_uart
         driver
         esp_timer
         cmock

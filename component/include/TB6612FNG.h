@@ -70,6 +70,12 @@ extern "C" {
 #define TB6612_PCNT_HIGH_LIMIT  30000
 #define TB6612_PCNT_LOW_LIMIT   (-30000)
 
+/* Thông số encoder + hộp số */
+#define TB6612_ENCODER_PPR      11      /* Số xung cơ bản (11 pole pairs) */
+#define TB6612_GEAR_RATIO       169      /* Tỉ số hộp số 90:1 */
+#define TB6612_QUADRATURE_MULT  4       /* Quadrature x4 (đếm cả 2 kênh, cả 2 cạnh) */
+#define TB6612_TICKS_PER_REV    (TB6612_ENCODER_PPR * TB6612_QUADRATURE_MULT * TB6612_GEAR_RATIO)  /* = 3960 ticks/vòng trục ra */
+
 /* ==================== PCF8575 bit mapping ==================== */
 
 /*

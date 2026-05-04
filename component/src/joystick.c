@@ -198,6 +198,7 @@ static void joystick_control_task(void *arg)
     ps2_data_t ps2;
     uint8_t last_dir = CAR_STOP;
     bool was_connected = false;
+    int log_counter = 0;
 
     ESP_LOGI(TAG, "Joystick control task started");
 
@@ -212,27 +213,52 @@ static void joystick_control_task(void *arg)
                 last_dir = CAR_STOP;
             }
             was_connected = false;
-            vTaskDelay(pdMS_TO_TICKS(100));
+
+            /* Log trạng thái disconnected mỗi ~2s */
+            if (log_counter % 100 == 0) {
+                ESP_LOGW(TAG, "Controller DISCONNECTED – đang chờ kết nối...");
+            }
+            log_counter++;
+            vTaskDelay(pdMS_TO_TICKS(20));
             continue;
         }
 
         if (!was_connected) {
-            ESP_LOGI(TAG, "Controller connected! mode=0x%02X btn=0x%02X 0x%02X",
-                     ps2.mode, ps2.buttons1, ps2.buttons2);
+            ESP_LOGI(TAG, "Controller CONNECTED! mode=0x%02X", ps2.mode);
             was_connected = true;
+            log_counter = 0;
         }
 
-        /* Sử dụng 4 nút: Tam giác, Vuông, Tròn, X (nằm ở byte 2) */
+        /* Log raw data mỗi ~1s (50 lần poll × 20ms = 1000ms) */
+        if (log_counter % 50 == 0) {
+            ESP_LOGI(TAG, "RAW: mode=0x%02X btn1=0x%02X btn2=0x%02X LX=%d LY=%d RX=%d RY=%d",
+                     ps2.mode, ps2.buttons1, ps2.buttons2,
+                     ps2.left_x, ps2.left_y, ps2.right_x, ps2.right_y);
+        }
+        log_counter++;
+
+        /* ---- Xác định hướng ---- */
         uint8_t new_dir = CAR_STOP;
 
-        if (joystick_btn2_pressed(&ps2, PS2_BTN_TRIANGLE)) {
-            new_dir = CAR_FORWARD;      /* Tam giác -> Tiến */
+        /* Ưu tiên 1: D-pad (buttons1) */
+        if (joystick_btn1_pressed(&ps2, PS2_BTN_UP)) {
+            new_dir = CAR_FORWARD;
+        } else if (joystick_btn1_pressed(&ps2, PS2_BTN_DOWN)) {
+            new_dir = CAR_BACKWARD;
+        } else if (joystick_btn1_pressed(&ps2, PS2_BTN_LEFT)) {
+            new_dir = CAR_TURN_LEFT;
+        } else if (joystick_btn1_pressed(&ps2, PS2_BTN_RIGHT)) {
+            new_dir = CAR_TURN_RIGHT;
+        }
+        /* Ưu tiên 2: Nút hình (buttons2) */
+        else if (joystick_btn2_pressed(&ps2, PS2_BTN_TRIANGLE)) {
+            new_dir = CAR_FORWARD;
         } else if (joystick_btn2_pressed(&ps2, PS2_BTN_CROSS)) {
-            new_dir = CAR_BACKWARD;     /* X -> Lùi */
+            new_dir = CAR_BACKWARD;
         } else if (joystick_btn2_pressed(&ps2, PS2_BTN_SQUARE)) {
-            new_dir = CAR_TURN_LEFT;    /* Vuông -> Trái */
+            new_dir = CAR_TURN_LEFT;
         } else if (joystick_btn2_pressed(&ps2, PS2_BTN_CIRCLE)) {
-            new_dir = CAR_TURN_RIGHT;   /* Tròn -> Phải */
+            new_dir = CAR_TURN_RIGHT;
         }
 
         /* Chỉ ghi PCF8575 khi hướng thay đổi */
@@ -249,7 +275,8 @@ static void joystick_control_task(void *arg)
                 if (new_dir == CAR_BACKWARD)   idx = 2;
                 if (new_dir == CAR_TURN_LEFT)  idx = 3;
                 if (new_dir == CAR_TURN_RIGHT) idx = 4;
-                ESP_LOGI(TAG, ">> %s (0x%02X)", names[idx], new_dir);
+                ESP_LOGI(TAG, ">> %s (PCF=0x%02X) btn1=0x%02X btn2=0x%02X",
+                         names[idx], new_dir, ps2.buttons1, ps2.buttons2);
             }
         }
 

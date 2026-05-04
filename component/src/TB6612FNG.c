@@ -131,9 +131,17 @@ static void encoder_print_task(void *arg)
         for (int i = 0; i < ENCODER_COUNT; i++) {
             pcnt_unit_get_count(s_print_sys->enc_units[i], &counts[i]);
         }
+
+        /* Tính số vòng trục ra (có dấu: + = thuận, - = nghịch) */
+        float rev_al = (float)counts[0] / TB6612_TICKS_PER_REV;
+        float rev_bl = (float)counts[1] / TB6612_TICKS_PER_REV;
+        float rev_ar = (float)counts[2] / TB6612_TICKS_PER_REV;
+        float rev_br = (float)counts[3] / TB6612_TICKS_PER_REV;
+
         ESP_LOGI("ENCODER",
-                 "AL:%+6d  BL:%+6d  |  AR:%+6d  BR:%+6d",
-                 counts[0], counts[1], counts[2], counts[3]);
+                 "AL:%+6d (%+.2f rev)  BL:%+6d (%+.2f rev)  |  AR:%+6d (%+.2f rev)  BR:%+6d (%+.2f rev)",
+                 counts[0], rev_al, counts[1], rev_bl,
+                 counts[2], rev_ar, counts[3], rev_br);
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
